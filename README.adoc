@@ -1,0 +1,15 @@
+= groovy-spark
+
+Run Spark jobs using Groovy
+
+== Running demo
+
+Once you've checked out the code, make sure the filename in
+`src/main/groovy/sparkfun/SimpleApp.groovy` is correct.
+It can be any text file.
+
+Then on your command line, run
+
+```bash
+./gradlew sparkRun
+```

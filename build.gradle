@@ -1,0 +1,50 @@
+plugins {
+    id 'nebula.provided-base' version '3.0.3'
+    id "de.undercouch.download" version "3.1.0"
+    id 'groovy'
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    provided 'org.apache.spark:spark-core_2.10:1.6.2'
+    compile 'org.codehaus.groovy:groovy-all:2.4.6'
+
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+}
+
+task sparkRun << {
+    def sparkVersion = '1.6.2'
+    def hadoopVersion = '2.6'
+    def sparkUrl = "http://apache.cs.utah.edu/spark/spark-${sparkVersion}/spark-${sparkVersion}-bin-hadoop${hadoopVersion}.tgz"
+    def sparkCache = file("${gradle.gradleUserHomeDir}/spark/spark-${sparkVersion}-bin-hadoop${hadoopVersion}.tgz")
+
+    download {
+        src sparkUrl
+        dest sparkCache
+        onlyIfNewer true
+    }
+
+    if (!file("${buildDir}/spark/spark-${sparkVersion}-bin-hadoop${hadoopVersion}").exists()) {
+        copy {
+            from tarTree(sparkCache)
+            into file("${buildDir}/spark")
+        }
+    }
+
+    def sparkHome = "${buildDir}/spark/spark-${sparkVersion}-bin-hadoop${hadoopVersion}"
+    def compileOnly = configurations.compile.files - configurations.provided.files
+    def jars = compileOnly.collect { it.toString() }.join(',')
+    exec {
+        workingDir projectDir
+        commandLine "${sparkHome}/bin/spark-submit",
+                "--class", "sparkfun.SimpleApp",
+                "--master", "local[*]",
+                "--jars", jars,
+                "$buildDir/libs/sparkone.jar"
+    }
+}
+
+tasks.findByName('sparkRun').dependsOn 'jar'
